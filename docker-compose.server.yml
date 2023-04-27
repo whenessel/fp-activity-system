@@ -1,0 +1,33 @@
+version: '3.7'
+
+x-fp-activity-docker: &fp-activity
+  build:
+    context: .
+    dockerfile: ./compose/Dockerfile
+  image: whenessel/fp-activity:latest
+  env_file:
+    - ./docker-compose.env
+
+
+services:
+  eve:
+    <<: *fp-activity
+    container_name: fp-activity-eve
+    restart: always
+    command: runbot
+    env_file:
+      - ./docker-compose.env
+    links:
+      - db_postgres_1:db_postgres_1
+    networks:
+      - db_default
+#  web:
+#    image: dkp
+#    container_name: dkp-web
+#    restart: always
+#    env_file:
+#      - ./docker-compose.env
+#    ports:
+#      - 8000:8000
+#    depends_on:
+#      - postgres
