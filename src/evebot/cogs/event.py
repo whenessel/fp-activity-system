@@ -285,6 +285,7 @@ class EventCog(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         message = await self.get_event_message(payload.channel_id, message_id=payload.message_id)
         event = await self.get_event_for_message(message_id=payload.message_id)
+
         member = payload.member
 
         # Сначала проверяем есть ли событие для этого сообщения
@@ -312,11 +313,12 @@ class EventCog(commands.Cog):
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent) -> None:
         message = await self.get_event_message(payload.channel_id, message_id=payload.message_id)
         event = await self.get_event_for_message(message_id=payload.message_id)
-        member = payload.member or event.guild.get_member(payload.user_id)
 
         # Сначала проверяем есть ли событие для этого сообщения
         if not event:
             return
+
+        member = payload.member or event.guild.get_member(payload.user_id)
 
         if event.status == EventStatus.FINISHED:
             return
