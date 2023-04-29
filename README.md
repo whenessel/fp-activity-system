@@ -19,10 +19,10 @@ docker create --env-file=.env --publish 0.0.0.0:8000:8000 --name=fp-activity-web
 docker start fp-activity-web
 
 # для применения миграций
-docker exec -it fp-activity-web python manage.py migrate --no-input
+docker exec -it fp-activity-eve python manage.py migrate --no-input
 
 # Для создания суперпользователя
-docker exec -it fp-activity-web python manage.py createsuperuser --username admin
+docker exec -it fp-activity-eve python manage.py createsuperuser --username admin
 
 ```
 
@@ -74,8 +74,14 @@ docker compose pull
 
 docker compose up -d
 
+# Создание БД
+docker exec -it fp-activity-postgres createdb -h localhost -U postgres fp-activity
+
 # Миграции
 docker exec -it fp-activity-eve python manage.py migrate --no-input
+
+docker restart fp-activity-eve
+
 
 # Остановка
 docker compose down
