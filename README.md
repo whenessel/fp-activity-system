@@ -80,6 +80,7 @@ docker exec -it fp-activity-postgres createdb -h localhost -U postgres fp-activi
 # Миграции
 docker exec -it fp-activity-eve python manage.py migrate --no-input
 
+# Перезапуск контейнера после миграций
 docker restart fp-activity-eve
 
 
