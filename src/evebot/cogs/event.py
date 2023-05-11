@@ -255,6 +255,9 @@ class EventCog(commands.Cog):
         self._event_moderators_cache: dict[int, dict] = {}
         self.cleanup_event_moderators_cache.start()
 
+        self._event_channels_cache: dict[int, dict] = {}
+        self.cleanup_event_channels_cache.start()
+
         self.ctx_menu_event_finish = app_commands.ContextMenu(name='Завершить событие',
                                                               callback=self.context_event_finish)
         self.bot.tree.add_command(self.ctx_menu_event_finish)
@@ -281,12 +284,20 @@ class EventCog(commands.Cog):
     async def cleanup_event_moderators_cache(self):
         self._event_moderators_cache.clear()
 
+    @tasks.loop(hours=1.0)
+    async def cleanup_event_channels_cache(self):
+        self._event_channels_cache.clear()
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         message = await self.get_event_message(payload.channel_id, message_id=payload.message_id)
         event = await self.get_event_for_message(message_id=payload.message_id)
 
         member = payload.member
+
+        # Проверим канал. Есть ли он в БД
+        if not self.is_event_channel(guild_id=payload.guild_id, channel_id=payload.channel_id):
+            return
 
         # Сначала проверяем есть ли событие для этого сообщения
         if not event:
@@ -308,6 +319,8 @@ class EventCog(commands.Cog):
                 await message.remove_reaction(emoji, member)
 
             event.add_member_attendance(member=member, server=current_member_attendance)
+        else:
+            await message.remove_reaction(str(payload.emoji), member)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent) -> None:
@@ -353,6 +366,21 @@ class EventCog(commands.Cog):
                 if guild_id not in self._event_moderators_cache:
                     self._event_moderators_cache[guild_id] = {}
                 self._event_moderators_cache[guild_id].update({member_id: True})
+                return True
+
+    def is_event_channel(self, guild_id: int, channel_id: int) -> bool:
+        try:
+            _ = self._event_channels_cache[guild_id][channel_id]
+            return True
+        except KeyError:
+            try:
+                _ = EventChannel.objects.get(guild_id=guild_id, channel_id=channel_id)
+            except EventChannel.DoesNotExist:
+                return False
+            else:
+                if guild_id not in self._event_channels_cache:
+                    self._event_channels_cache[guild_id] = {}
+                self._event_channels_cache[guild_id].update({channel_id: True})
                 return True
 
     async def get_event_message(self, channel_id: int, message_id: int) -> Optional[discord.Message]:

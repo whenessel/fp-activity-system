@@ -26,6 +26,6 @@ services:
     volumes:
       - ./tmp/postgres:/var/lib/postgresql/data:Z
     ports:
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:5430:5432
     env_file:
       - ./docker-compose.env
